@@ -1,0 +1,12 @@
+{
+  "name": "cryptomkt",
+  "version": "1.0.0",
+  "main": "index.js",
+  "license": "MIT",
+  "scripts": {
+    "build": "rm -rf build && tsc && yarn install --prod --modules-folder build/node_modules"
+  },
+  "devDependencies": {
+    "typescript": "^4.0.3"
+  }
+}

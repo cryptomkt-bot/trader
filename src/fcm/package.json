@@ -1,0 +1,13 @@
+{
+  "name": "src",
+  "version": "1.0.0",
+  "main": "index.js",
+  "license": "MIT",
+  "scripts": {
+    "build": "rm -rf build && tsc && yarn install --prod --modules-folder build/node_modules"
+  },
+  "devDependencies": {
+    "aws-sdk": "^2.760.0",
+    "typescript": "^4.0.3"
+  }
+}
