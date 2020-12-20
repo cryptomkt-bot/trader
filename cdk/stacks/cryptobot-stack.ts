@@ -22,7 +22,11 @@ import {
 import { Function, Runtime, Code } from "@aws-cdk/aws-lambda";
 import { Table, AttributeType } from "@aws-cdk/aws-dynamodb";
 import { Queue } from "@aws-cdk/aws-sqs";
-import { SqsEventSource } from "@aws-cdk/aws-lambda-event-sources";
+import { Topic } from "@aws-cdk/aws-sns";
+import {
+  SnsEventSource,
+  SqsEventSource,
+} from "@aws-cdk/aws-lambda-event-sources";
 import {
   PolicyStatementProps,
   Role,
@@ -39,7 +43,7 @@ export class CryptoBotStack extends Stack {
   private _tradersTable: Table;
   private _tradersQueue: Queue;
   private _tradersDeadLetterQueue: Queue;
-  private _fcmQueue: Queue;
+  private _fcmTopic: Topic;
   private _fcmKey: CfnParameter;
 
   constructor(scope: Construct, id: string, props?: StackProps) {
@@ -119,14 +123,14 @@ export class CryptoBotStack extends Stack {
     return this._tradersQueue;
   }
 
-  get fcmQueue(): Queue {
-    if (!this._fcmQueue) {
-      this._fcmQueue = new Queue(this, "fcm-queue", {
-        fifo: true,
+  get fcmTopic(): Topic {
+    if (!this._fcmTopic) {
+      this._fcmTopic = new Topic(this, "fcm-topic", {
+        displayName: "FCM topic",
       });
     }
 
-    return this._fcmQueue;
+    return this._fcmTopic;
   }
 
   createCryptoMktLambda(): Function {
@@ -191,7 +195,7 @@ export class CryptoBotStack extends Stack {
         TABLE_NAME: this.tradersTable.tableName,
         USERS_TABLE_NAME: this.usersTable.tableName,
         QUEUE_URL: this.tradersQueue.queueUrl,
-        FCM_QUEUE_URL: this.fcmQueue.queueUrl,
+        FCM_TOPIC: this.fcmTopic.topicArn,
         CRYPTOMKT_LIMIT: "100",
         DEFAULT_SPREAD,
       },
@@ -203,7 +207,7 @@ export class CryptoBotStack extends Stack {
 
     // Grant permissions to send SQS messages
     this.tradersQueue.grant(lambda, "sqs:SendMessage");
-    this.fcmQueue.grant(lambda, "sqs:SendMessage");
+    this.fcmTopic.grantPublish(lambda);
 
     // Trigger Lambda with queue
     lambda.addEventSource(
@@ -224,14 +228,14 @@ export class CryptoBotStack extends Stack {
         REGION: this.region,
         TABLE_NAME: this.tradersTable.tableName,
         USERS_TABLE_NAME: this.usersTable.tableName,
-        FCM_QUEUE_URL: this.fcmQueue.queueUrl,
+        FCM_TOPIC: this.fcmTopic.topicArn,
       },
     });
 
     // Grant permissions to DynamoDB
     this.usersTable.grant(lambda, "dynamodb:Scan");
     this.tradersTable.grant(lambda, "dynamodb:Query", "dynamodb:DeleteItem");
-    this.fcmQueue.grant(lambda, "sqs:SendMessage");
+    this.fcmTopic.grantPublish(lambda);
 
     // Trigger Lambda with DLQ
     lambda.addEventSource(
@@ -250,12 +254,12 @@ export class CryptoBotStack extends Stack {
       timeout: Duration.seconds(10),
       environment: {
         FCM_KEY: this.fcmKey.valueAsString,
-        FCM_QUEUE_URL: this.fcmQueue.queueUrl,
+        FCM_TOPIC: this.fcmTopic.topicArn,
       },
     });
 
     // Trigger Lambda with queue
-    lambda.addEventSource(new SqsEventSource(this.fcmQueue));
+    lambda.addEventSource(new SnsEventSource(this.fcmTopic));
 
     return lambda;
   }

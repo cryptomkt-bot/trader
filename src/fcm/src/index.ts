@@ -10,7 +10,9 @@ interface RecordBody {
 
 interface Event {
   Records: {
-    body: string;
+    Sns: {
+      Message: string;
+    };
   }[];
 }
 
@@ -25,7 +27,7 @@ export const handler = async (event: Event): Promise<void> => {
   const { Records } = event;
 
   const notificationPromises = Records.map((r) => {
-    const body: RecordBody = JSON.parse(r.body);
+    const body: RecordBody = JSON.parse(r.Sns.Message);
 
     return sendNotification(FCM_KEY, body.tokens, body.notification).catch();
   });
