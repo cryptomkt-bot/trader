@@ -5,4 +5,5 @@ export interface User {
   ApiKey: string;
   ApiSecret: string;
   DeviceTokens: Set<string>;
+  LatestMessageId: string;
 }

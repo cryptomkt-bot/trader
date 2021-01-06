@@ -202,7 +202,7 @@ export class CryptoBotStack extends Stack {
     });
 
     // Grant permissions to DynamoDB
-    this.usersTable.grant(lambda, "dynamodb:Scan");
+    this.usersTable.grant(lambda, "dynamodb:Scan", "dynamodb:UpdateItem");
     this.tradersTable.grant(lambda, "dynamodb:Query", "dynamodb:UpdateItem");
 
     // Grant permissions to send SQS messages

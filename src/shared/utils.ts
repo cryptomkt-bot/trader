@@ -13,7 +13,12 @@ const getUsers = async (
     });
   }
 
-  const qs = await docClient.scan({ TableName: USERS_TABLE_NAME }).promise();
+  const qs = await docClient
+      .scan({
+	TableName: USERS_TABLE_NAME,
+	ConsistentRead: true
+      })
+      .promise();
 
   return qs.Items as User[];
 };
