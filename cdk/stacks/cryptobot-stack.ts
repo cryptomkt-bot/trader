@@ -502,7 +502,8 @@ export class CryptoBotStack extends Stack {
               ":code": {
                 "S": "$input.params('market')-$input.params('side')"
               }
-            }
+            },
+            "ConsistentRead": true
           }`,
         },
         integrationResponses: [
