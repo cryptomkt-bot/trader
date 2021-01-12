@@ -2,15 +2,13 @@ import { DynamoDB } from "aws-sdk";
 
 import { User } from "./models";
 
-const { USERS_TABLE_NAME = "", REGION } = process.env;
+const { USERS_TABLE_NAME = "" } = process.env;
 
 const getUsers = async (
   docClient?: DynamoDB.DocumentClient
 ): Promise<User[]> => {
   if (!docClient) {
-    docClient = new DynamoDB.DocumentClient({
-      service: new DynamoDB({ region: REGION }),
-    });
+    docClient = new DynamoDB.DocumentClient();
   }
 
   const qs = await docClient
