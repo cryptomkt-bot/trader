@@ -140,7 +140,7 @@ export class CryptoBotStack extends Stack {
       code: Code.fromAsset(codePath),
       handler: "cryptomkt/src/index.handler",
       runtime: Runtime.NODEJS_12_X,
-      timeout: Duration.seconds(10),
+      timeout: Duration.seconds(30),
       environment: {
         REGION: this.region,
         USERS_TABLE_NAME: this.usersTable.tableName,
