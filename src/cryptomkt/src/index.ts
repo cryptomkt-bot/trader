@@ -20,6 +20,8 @@ interface Event {
   };
 }
 
+const HOSTNAME = "api.cryptomkt.com";
+
 export const handler = async (event: Event) => {
   const { username } = event.requestContext.authorizer;
   const user = await getUserByUsername(username);
@@ -30,15 +32,21 @@ export const handler = async (event: Event) => {
 
   const qsParams = querystring.stringify(event.queryStringParameters);
   const { httpMethod, pathParameters, body } = event;
-  const path = `/v2/${pathParameters.proxy}`;
 
+  let path = `/v2/${pathParameters.proxy}`;
   const parsedBody = body ? JSON.parse(body) : {};
 
   let headers: { [key: string]: any } = signRequest(user, path, parsedBody);
+  if (qsParams) {
+    path += `?${qsParams}`;
+  }
+
+  let logMessage = `Making ${httpMethod} request to ${HOSTNAME}${path}`;
   let postData: string;
 
   if (body) {
     postData = querystring.stringify(parsedBody);
+    logMessage += ` with body: ${postData}`;
     headers = {
       ...headers,
       "Content-Type": "application/x-www-form-urlencoded",
@@ -46,11 +54,12 @@ export const handler = async (event: Event) => {
     };
   }
 
+  console.log(logMessage);
   return new Promise((resolve, reject) => {
     const req = https.request(
       {
-        hostname: "api.cryptomkt.com",
-        path: qsParams ? `${path}?${qsParams}` : path,
+        hostname: HOSTNAME,
+        path,
         method: httpMethod,
         headers,
       },
@@ -60,8 +69,10 @@ export const handler = async (event: Event) => {
           body += chunk;
         });
         res.on("end", () => {
+          const { statusCode } = res;
+          console.log(`Response status code: ${statusCode}`);
           resolve({
-            statusCode: res.statusCode,
+            statusCode,
             body,
             headers: {
               "Access-Control-Allow-Origin": "*",
@@ -72,6 +83,7 @@ export const handler = async (event: Event) => {
     );
 
     req.on("error", (e) => {
+      console.error(`Failed to make request: ${e.message}`);
       reject(e);
     });
 
